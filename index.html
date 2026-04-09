@@ -223,6 +223,47 @@
       line-height: 1; transition: color 0.15s;
     }
     .loc-file-clear:hover { color: var(--brick-light); }
+    .loc-file-ref-input {
+      flex: 1; background: var(--forest-dark); color: var(--text-mid);
+      border: 1px solid var(--border); border-radius: 5px;
+      padding: 6px 9px; font-size: 12px;
+      font-family: 'Barlow', sans-serif; transition: border-color 0.15s;
+    }
+    .loc-file-ref-input::placeholder { color: var(--text-muted); font-style: italic; }
+    .loc-file-ref-input:focus { outline: none; border-color: var(--brick); }
+    .info-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--border); color: var(--text-muted);
+      font-size: 10px; font-weight: 700; font-style: italic;
+      font-family: 'Barlow', sans-serif;
+      cursor: help; flex-shrink: 0; position: relative;
+      transition: background 0.15s, color 0.15s;
+      user-select: none;
+    }
+    .info-icon:hover, .info-icon:focus {
+      background: var(--brick); color: var(--cream); outline: none;
+    }
+    .info-icon::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--forest-dark);
+      color: var(--cream);
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 11px; font-weight: 400; font-style: normal;
+      font-family: 'Barlow', sans-serif; line-height: 1.4;
+      white-space: normal; width: 220px; text-align: left;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.15s;
+      z-index: 100;
+    }
+    .info-icon:hover::after, .info-icon:focus::after { opacity: 1; }
     .loc-dim-row { display: flex; align-items: center; gap: 7px; }
     .loc-dim-label {
       font-size: 10px; color: var(--text-muted); font-weight: 700;
@@ -571,23 +612,42 @@
     .desc-textarea::placeholder { color: var(--text-muted); }
     .desc-textarea:focus { border-color: var(--brick); }
 
-    /* ── FILE UPLOAD ── */
-    .dropzone {
-      border: 2px dashed var(--border-dark); border-radius: 8px;
-      padding: 24px 20px; text-align: center; cursor: pointer;
-      transition: all 0.2s; position: relative; background: var(--forest-dark);
+    /* ── ART FILE UPLOAD (Google Drive) ── */
+    .art-upload-instructions {
+      font-size: 13px; color: var(--text-mid); line-height: 1.5;
+      margin-bottom: 14px;
     }
-    .dropzone:hover, .dropzone.dragover { border-color: var(--brick-light); background: #2a1210; }
-    .dropzone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
-    .dropzone-icon {
-      width: 36px; height: 36px; margin: 0 auto 10px;
-      background: var(--border); border-radius: 6px;
-      display: flex; align-items: center; justify-content: center;
+    .art-upload-instructions strong { color: var(--tan); }
+    .art-upload-instructions code {
+      background: var(--forest-dark); color: var(--tan);
+      padding: 1px 6px; border-radius: 3px; font-size: 12px;
+      font-family: 'Menlo', 'Monaco', monospace;
     }
-    .dropzone-icon svg { width: 18px; height: 18px; color: var(--text-muted); }
-    .dropzone-title { font-size: 13px; font-weight: 600; color: var(--text-mid); margin-bottom: 4px; }
-    .dropzone-sub { font-size: 11px; color: var(--text-muted); }
-    .dropzone-sub span { color: var(--tan); font-weight: 600; }
+    .art-upload-btn {
+      display: block; width: 100%; box-sizing: border-box;
+      background: var(--brick); color: var(--cream);
+      border: none; border-radius: 8px;
+      padding: 16px 20px; text-align: center;
+      font-size: 15px; font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+      cursor: pointer; text-decoration: none;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .art-upload-btn:hover { background: var(--brick-light); }
+    .art-upload-btn:active { transform: translateY(1px); }
+    .art-upload-sub {
+      font-size: 11px; color: var(--text-muted);
+      text-align: center; margin-top: 8px;
+    }
+    .art-upload-checkbox-row { margin-top: 14px; }
+    .art-upload-checkbox-label {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--text-mid); cursor: pointer;
+    }
+    .art-upload-checkbox-label input[type="checkbox"] {
+      width: 16px; height: 16px; accent-color: var(--brick);
+      cursor: pointer;
+    }
     .file-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
     .file-item {
       display: flex; align-items: center; justify-content: space-between;
@@ -789,10 +849,10 @@
       <div class="card-title">Quantity</div>
       <div class="qty-wrapper">
         <button class="qty-btn" onclick="adjustQty(-12)">−</button>
-        <input class="qty-input" type="number" id="qty" value="111" min="1" max="9999" oninput="calculate()">
+        <input class="qty-input" type="number" id="qty" value="100" min="1" max="9999" oninput="calculate()">
         <button class="qty-btn" onclick="adjustQty(12)">+</button>
       </div>
-      <input type="range" class="qty-range" id="qtyRange" min="1" max="500" value="111" oninput="syncRange(this.value)">
+      <input type="range" class="qty-range" id="qtyRange" min="1" max="500" value="100" oninput="syncRange(this.value)">
       <div class="qty-tiers">
         <span>1</span><span>12</span><span>25</span><span>50</span><span>100</span><span>250</span><span>500+</span>
       </div>
@@ -968,17 +1028,21 @@
     <!-- ART FILES -->
     <div class="card">
       <div class="card-title">Art Files</div>
-      <div class="dropzone" id="dropzone">
-        <input type="file" id="fileInput" multiple accept=".ai,.eps,.pdf,.png,.jpg,.jpeg,.svg,.psd,.tif,.tiff" onchange="handleFiles(this.files)">
-        <div class="dropzone-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M12 16V8m0 0-3 3m3-3 3 3M6 20h12a2 2 0 002-2V8.5L14.5 3H6a2 2 0 00-2 2v13a2 2 0 002 2z"/>
-          </svg>
-        </div>
-        <div class="dropzone-title">Drop files here or <span style="color:var(--brick);font-weight:700">browse</span></div>
-        <div class="dropzone-sub">AI · EPS · PDF · PNG · JPG · PSD · SVG — <span>multiple files OK</span></div>
+      <div class="art-upload-instructions">
+        Upload your art files to our secure drop folder below. Any filename is fine —
+        we'll match them up to the right print locations based on the descriptions
+        you add next to each location above.
       </div>
-      <div class="file-list" id="fileList"></div>
+      <a class="art-upload-btn" href="https://sendtodrive.com/p/ESJDtCVMSl7Dkm2X" target="_blank" rel="noopener noreferrer">
+        Upload Art Files to Google Drive →
+      </a>
+      <div class="art-upload-sub">Accepted: AI · EPS · PDF · PNG · JPG · PSD · SVG · TIFF · Opens in new tab</div>
+      <div class="art-upload-checkbox-row">
+        <label class="art-upload-checkbox-label">
+          <input type="checkbox" id="artUploadedCheck">
+          <span>I've uploaded my art files</span>
+        </label>
+      </div>
     </div>
 
     <!-- DELIVERY -->
@@ -1006,7 +1070,7 @@
       <div class="result-header" id="resultHeader">
         <div class="label">Per Piece</div>
         <div class="price-big" id="perPiece">—</div>
-        <div class="price-sub">at <span id="qtyDisplay">111</span> pieces</div>
+        <div class="price-sub">at <span id="qtyDisplay">100</span> pieces</div>
       </div>
       <div class="result-body">
 
@@ -1107,7 +1171,6 @@
   let fleeceAutoActive = false;
   let pmsColorCount    = 1;
   let pmsColorList     = [];
-  let uploadedFiles    = [];
 
   // ── GARMENTS ──────────────────────────────────
   function renderGarments() {
@@ -1219,42 +1282,24 @@
 
       const fileLbl = document.createElement('div');
       fileLbl.className = 'loc-file-label';
-      fileLbl.textContent = 'Art File';
+      fileLbl.textContent = 'File Ref';
 
-      const fileHidden = document.createElement('input');
-      fileHidden.type = 'file';
-      fileHidden.accept = '.ai,.eps,.psd,.pdf,.png,.jpg,.jpeg,.svg,.tif,.tiff';
-      fileHidden.style.display = 'none';
-      fileHidden.onchange = e => {
-        const f = e.target.files[0];
-        if (!f) return;
-        loc.fileName = f.name;
-        loc.file = f;
-        renderLocations();
-      };
+      const fileRefInfo = document.createElement('span');
+      fileRefInfo.className = 'info-icon';
+      fileRefInfo.setAttribute('tabindex', '0');
+      fileRefInfo.setAttribute('data-tip', "A short description of the art for this location (e.g. 'Shirt front graphic'). This helps us match your uploaded files to the right print location.");
+      fileRefInfo.textContent = 'i';
 
-      const uploadBtn = document.createElement('button');
-      uploadBtn.className = 'loc-upload-btn';
-      uploadBtn.textContent = 'Upload';
-      uploadBtn.onclick = () => fileHidden.click();
-
-      const fileNameEl = document.createElement('div');
-      fileNameEl.className = 'loc-file-name' + (loc.fileName ? '' : ' empty');
-      fileNameEl.textContent = loc.fileName || 'No file chosen';
+      const fileRefInput = document.createElement('input');
+      fileRefInput.type = 'text';
+      fileRefInput.className = 'loc-file-ref-input';
+      fileRefInput.placeholder = 'optional — e.g. Shirt Front Graphic';
+      fileRefInput.value = loc.fileName || '';
+      fileRefInput.oninput = e => { loc.fileName = e.target.value; };
 
       fileRow.appendChild(fileLbl);
-      fileRow.appendChild(fileHidden);
-      fileRow.appendChild(uploadBtn);
-      fileRow.appendChild(fileNameEl);
-
-      if (loc.fileName) {
-        const clearBtn = document.createElement('button');
-        clearBtn.className = 'loc-file-clear';
-        clearBtn.title = 'Remove file';
-        clearBtn.innerHTML = '&times;';
-        clearBtn.onclick = () => { loc.fileName = ''; loc.file = null; renderLocations(); };
-        fileRow.appendChild(clearBtn);
-      }
+      fileRow.appendChild(fileRefInfo);
+      fileRow.appendChild(fileRefInput);
 
       body.appendChild(fileRow);
 
@@ -1619,40 +1664,6 @@
     document.getElementById('tierDot').style.background = anyInvalid ? 'var(--brick)' : '#4a7c59';
   }
 
-  // ── FILE HANDLING ─────────────────────────────
-  function handleFiles(fileList) {
-    Array.from(fileList).forEach(f => {
-      if (!uploadedFiles.find(u => u.name === f.name && u.size === f.size))
-        uploadedFiles.push(f);
-    });
-    renderFileList();
-    document.getElementById('fileInput').value = '';
-  }
-  function removeFile(idx) { uploadedFiles.splice(idx, 1); renderFileList(); }
-  function renderFileList() {
-    const list = document.getElementById('fileList');
-    list.innerHTML = '';
-    uploadedFiles.forEach((f, i) => {
-      const ext  = f.name.split('.').pop().toLowerCase();
-      const icon = { ai:'🎨', eps:'🎨', psd:'🎨', pdf:'📄', png:'🖼', jpg:'🖼', jpeg:'🖼', svg:'🖼', tif:'🖼', tiff:'🖼' }[ext] || '📎';
-      const size = f.size < 1048576 ? (f.size/1024).toFixed(0)+' KB' : (f.size/1048576).toFixed(1)+' MB';
-      list.innerHTML += `<div class="file-item">
-        <div class="file-left">
-          <span class="file-icon">${icon}</span>
-          <div><div class="file-name">${f.name}</div><div class="file-size">${size}</div></div>
-        </div>
-        <button class="file-remove" onclick="removeFile(${i})">×</button>
-      </div>`;
-    });
-  }
-  const dz = document.getElementById('dropzone');
-  dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('dragover'); });
-  dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
-  dz.addEventListener('drop', e => {
-    e.preventDefault(); dz.classList.remove('dragover');
-    handleFiles(e.dataTransfer.files);
-  });
-
   // ── SEND QUOTE ────────────────────────────────
   function sendQuote() {
     const requiredIds = ['clientName', 'clientCompany', 'clientPhone', 'clientEmail'];
@@ -1717,9 +1728,10 @@
       return `  Location ${i+1}: ${locName} — ${loc.colors} color${loc.colors > 1 ? 's' : ''}${sizeTag}${dropTag}${fileTag}`;
     }).join('%0A');
 
-    const files = uploadedFiles.length
-      ? uploadedFiles.map(f => `  • ${f.name}`).join('%0A')
-      : '  (please reply with art files attached)';
+    const artUploaded = document.getElementById('artUploadedCheck').checked;
+    const artStatus = artUploaded
+      ? '  ✓ Client confirmed art files were uploaded'
+      : '  ⚠ Client did NOT confirm upload — please verify before proceeding';
 
     const body = [
       'Hi David,',
@@ -1746,7 +1758,9 @@
       shipLine,
       desc ? `\nProject Notes:\n${desc}\n` : '',
       'Art Files:',
-      decodeURIComponent(files),
+      '  Upload link: https://sendtodrive.com/p/ESJDtCVMSl7Dkm2X',
+      artStatus,
+      '  (See file references per location above)',
       '',
       'Please confirm and let me know next steps.',
     ].filter(line => line !== '').join('\n');
