@@ -202,6 +202,20 @@
       transition: all 0.15s; flex-shrink: 0;
     }
     .g-remove:hover { background: var(--brick); border-color: var(--brick); color: var(--cream); }
+    .g-qty {
+      width: 58px; flex-shrink: 0; background: var(--forest-mid);
+      border: 1.5px solid var(--border); border-radius: 5px;
+      color: var(--text-mid); font-size: 12px; font-family: 'Barlow', sans-serif;
+      padding: 8px 6px; outline: none; text-align: center; transition: border-color 0.15s;
+    }
+    .g-qty::placeholder { color: var(--text-muted); font-size: 10px; }
+    .g-qty:focus { border-color: var(--brick); }
+    .g-qty-label { font-size: 9px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0; }
+    .qty-warning {
+      display: none; margin-top: 6px; padding: 6px 10px;
+      background: #2e1e14; border: 1px solid var(--brick-light); border-radius: 5px;
+      font-size: 10px; color: #e8b090; line-height: 1.4;
+    }
     .add-garment-btn {
       width: 100%; padding: 8px; background: transparent;
       border: 1.5px dashed var(--border-dark); border-radius: 7px;
@@ -708,7 +722,7 @@
       <div class="card-title"><span class="step-num">1</span> How many pieces?</div>
       <div class="qty-row">
         <button class="qty-btn" onclick="adjQty(-12)">−</button>
-        <input class="qty-input" type="number" id="qty" value="100" min="1" max="5000" oninput="syncSlider();calc()">
+        <input class="qty-input" type="number" id="qty" value="100" min="1" max="5000" oninput="syncSlider();validateGarmentQtys();calc()">
         <button class="qty-btn" onclick="adjQty(12)">+</button>
       </div>
       <input type="range" class="qty-range" id="qtyRange" min="0" max="1000" value="320" oninput="sliderToQty()">
@@ -721,6 +735,7 @@
       <div class="card-title"><span class="step-num">2</span> What are we printing on?</div>
       <div class="garment-rows" id="garmentRows"></div>
       <button class="add-garment-btn" onclick="addGarment()">+ Add Another Garment</button>
+      <div class="qty-warning" id="qtyWarning"></div>
       <div class="flash-notice" id="flashNotice">
         Dark garment detected — <strong>flash cure (+$0.20/pc)</strong> has been auto-applied. Required for proper ink adhesion on dark fabrics.
       </div>
@@ -823,7 +838,20 @@
         <div class="tl-label" style="margin-bottom:6px">Delivery</div>
         <div class="delivery-toggle">
           <div class="d-opt active" id="dPickup" onclick="setShip('pickup')">Pickup — Free</div>
-          <div class="d-opt" id="dShip" onclick="setShip('ship')">Ship to Me — ~$30/box</div>
+          <div class="d-opt" id="dShip" onclick="setShip('ship')">Ship to Me
+            <span class="info-i" style="margin-left:4px;vertical-align:middle;" onmouseenter="showTip(this,'shipto')" onmouseleave="hideTip('shipto')" onclick="event.stopPropagation()">i</span>
+          </div>
+          <div class="d-opt" id="dBlind" onclick="setShip('blind')">Ship Blind
+            <span class="info-i" style="margin-left:4px;vertical-align:middle;" onmouseenter="showTip(this,'blind')" onmouseleave="hideTip('blind')" onclick="event.stopPropagation()">i</span>
+          </div>
+        </div>
+        <div id="shipAddress" style="display:none; margin-top:8px;">
+          <input type="text" class="g-desc" id="shipAddr" placeholder="Street address" style="width:100%;margin-bottom:6px;">
+          <div style="display:flex;gap:6px;">
+            <input type="text" class="g-desc" id="shipCity" placeholder="City" style="flex:2;">
+            <input type="text" class="g-desc" id="shipState" placeholder="State" style="width:60px;">
+            <input type="text" class="g-desc" id="shipZip" placeholder="Zip" style="width:72px;">
+          </div>
         </div>
       </div>
     </div>
@@ -983,7 +1011,7 @@
   const FLEECE_KEYWORDS = ['hoodie','hoody','sweatshirt','crewneck','crew neck','fleece','pullover','zip-up','zip up','18500','18000','ss3000','p170','g185','g186'];
 
   // ── STATE ─────────────────────────────────────
-  let garments = [{ type:'tee', color:'unknown', desc:'' }];
+  let garments = [{ type:'tee', color:'unknown', desc:'', qty:'' }];
   let locId = 1;
   let locs = [{ id:1, preset:'front', custom:'', colors:2, printW:'', printH:'', drop:'' }];
   let rushMode = 'standard';
@@ -1025,6 +1053,7 @@
   function sliderToQty() {
     const s=parseInt(document.getElementById('qtyRange').value);
     document.getElementById('qty').value=sliderToQtyVal(s);
+    validateGarmentQtys();
     calc();
   }
   function syncSlider() {
@@ -1073,11 +1102,22 @@
       desc.oninput = e => { garments[idx].desc = e.target.value; detectGarmentFlags(); };
       row.appendChild(desc);
 
+      // Qty input (only when multiple garments)
+      if (garments.length > 1) {
+        const qlbl = document.createElement('span'); qlbl.className = 'g-qty-label'; qlbl.textContent = 'Qty';
+        row.appendChild(qlbl);
+        const qinp = document.createElement('input'); qinp.type = 'number'; qinp.className = 'g-qty';
+        qinp.min = '0'; qinp.placeholder = '#';
+        qinp.value = g.qty;
+        qinp.oninput = e => { garments[idx].qty = e.target.value; validateGarmentQtys(); calc(); };
+        row.appendChild(qinp);
+      }
+
       // Remove button
       if (garments.length > 1) {
         const rm = document.createElement('button'); rm.className = 'g-remove';
         rm.innerHTML = '&times;'; rm.title = 'Remove';
-        rm.onclick = () => { garments.splice(idx, 1); renderGarments(); detectGarmentFlags(); };
+        rm.onclick = () => { garments.splice(idx, 1); renderGarments(); detectGarmentFlags(); validateGarmentQtys(); calc(); };
         row.appendChild(rm);
       }
 
@@ -1085,9 +1125,32 @@
     });
   }
 
+  function validateGarmentQtys() {
+    const warn = document.getElementById('qtyWarning');
+    if (garments.length < 2) { warn.style.display = 'none'; return; }
+    const totalQty = parseInt(document.getElementById('qty').value) || 0;
+    const garmentSum = garments.reduce((s, g) => s + (parseInt(g.qty) || 0), 0);
+    if (garmentSum === 0) {
+      warn.style.display = 'block';
+      warn.innerHTML = 'Enter qty for each garment — should total <strong>' + totalQty.toLocaleString() + ' pieces</strong>.';
+    } else if (garmentSum !== totalQty) {
+      warn.style.display = 'block';
+      const diff = totalQty - garmentSum;
+      warn.innerHTML = 'Garment quantities total <strong>' + garmentSum.toLocaleString() + '</strong> — '
+        + (diff > 0 ? '<strong>' + diff + ' short</strong>' : '<strong>' + Math.abs(diff) + ' over</strong>')
+        + ' of the <strong>' + totalQty.toLocaleString() + ' pieces</strong> above.';
+    } else {
+      warn.style.display = 'block';
+      warn.style.background = '#1a2e1a'; warn.style.borderColor = 'var(--forest)'; warn.style.color = 'var(--sage)';
+      warn.innerHTML = '✓ Quantities match — <strong>' + totalQty.toLocaleString() + ' pieces</strong>.';
+      setTimeout(() => { warn.style.display = 'none'; warn.style.background = ''; warn.style.borderColor = ''; warn.style.color = ''; }, 2500);
+    }
+  }
+
   function addGarment() {
-    garments.push({ type:'tee', color:'unknown', desc:'' });
+    garments.push({ type:'tee', color:'unknown', desc:'', qty:'' });
     renderGarments();
+    validateGarmentQtys();
   }
 
   function detectGarmentFlags() {
@@ -1313,6 +1376,8 @@
     shipMode=mode;
     document.getElementById('dPickup').classList.toggle('active',mode==='pickup');
     document.getElementById('dShip').classList.toggle('active',mode==='ship');
+    document.getElementById('dBlind').classList.toggle('active',mode==='blind');
+    document.getElementById('shipAddress').style.display=(mode==='ship'||mode==='blind')?'block':'none';
     calc();
   }
 
@@ -1321,6 +1386,8 @@
     flash: { title:'⚡ Why Flash Cure?', body:'When printing on <strong>dark-colored garments</strong>, a white underbase layer is printed first. <strong>Flash curing</strong> is an intermediate heat step that gels the underbase before top colors are applied — preventing muddy results and ensuring sharp, vibrant prints on black, navy, dark grey, and similar fabrics.' },
     fleece: { title:'🧶 Fleece & Special Handling', body:'Fleece, heavyweight knits, and tech fabrics require <strong>slower press speeds</strong> and extra care so ink bonds properly without scorching or distorting the material. We prioritize <strong>print quality over speed</strong> — the extra handling keeps your product looking sharp wash after wash.' },
     drop: { title:'📐 What is Drop?', body:'<strong>Drop</strong> is the distance from the <strong>collar seam</strong> down to the <strong>top edge of the graphic</strong>. It controls how high or low your print sits on the garment.<br><br>Our standard drop is <strong>2.75″–3″</strong> from the collar. Leave blank if you don\'t have a preference and we\'ll use standard placement.' },
+    shipto: { title:'📦 Ship to Me', body:'Estimated at <strong>~$30/box</strong>. Final shipping cost will be adjusted at the end of your order if you aren\'t supplying your own shipping labels.' },
+    blind: { title:'📦 Blind Ship', body:'We ship directly to <strong>your client</strong> with <strong>no trace of our address</strong> on the box — it looks like it came from you. Final shipping cost will be adjusted at the end of your order if you aren\'t providing your own label.' },
     printmax: { title:'📏 Max Print Size', body:'Our maximum printable area depends on the location:<br><br><strong>Standard platen</strong> (front, back, chest, etc.):<br>Up to <strong>15″ wide × 17″ tall</strong><br><br><strong>Sleeve:</strong><br>Up to <strong>4.5″ wide × 17″ tall</strong><br><br>Values entered above the max will be automatically capped.' },
   };
   let activeTips = {};
@@ -1364,16 +1431,29 @@
     // Add-ons
     let extras=0;
     if(isOn('swFlash'))   extras+=0.20*qty*rMult;
-    if(isOn('swFleece'))  extras+=0.50*qty;
+
+    // Fleece: charge only for fleece garment quantities
+    let fleeceQty=0;
+    if(isOn('swFleece')) {
+      if(garments.length>1) {
+        fleeceQty=garments.filter(g=>FLEECE_TYPES.has(g.type)).reduce((s,g)=>s+(parseInt(g.qty)||0),0);
+      } else {
+        fleeceQty=qty;
+      }
+      extras+=0.50*fleeceQty;
+    }
+
     if(isOn('swFold'))    extras+=0.75*qty*rMult;
     if(isOn('swLabel'))   extras+=0.50*qty*rMult;
     if(isOn('swHangtag')) extras+=0.20*qty;
 
-    // Shipping
+    // Shipping — mix of fleece and non-fleece packing
     const isFleece=isOn('swFleece');
-    const perBox=isFleece?20:72;
-    const boxes=Math.ceil(qty/perBox);
-    const shipCost=shipMode==='ship'?boxes*30:0;
+    const nonFleeceQty=qty-fleeceQty;
+    const fleeceBoxes=isFleece?Math.ceil(fleeceQty/20):0;
+    const nonFleeceBoxes=Math.ceil((isFleece?nonFleeceQty:qty)/72);
+    const boxes=fleeceBoxes+nonFleeceBoxes;
+    const shipCost=(shipMode==='ship'||shipMode==='blind')?boxes*30:0;
 
     const total=rushedPrint+screenCost+platenCost+extras+shipCost;
     const ppc=total/qty;
@@ -1447,7 +1527,8 @@
     const garmentStr = garments.map(g => {
       const t = GARMENT_TYPES.find(x=>x.key===g.type);
       const c = GARMENT_COLORS.find(x=>x.value===g.color);
-      return (t?t.label:g.type) + (c&&c.value!=='unknown'?' ('+c.label+')':'') + (g.desc?' — '+g.desc:'');
+      const qtyStr = (garments.length>1 && g.qty) ? g.qty+'× ' : '';
+      return qtyStr + (t?t.label:g.type) + (c&&c.value!=='unknown'?' ('+c.label+')':'') + (g.desc?' — '+g.desc:'');
     }).join(', ');
     const rush={standard:'Standard (10 biz days)',oneweek:'Rush 1 Week',twoday:'Express 2–3 Days'}[rushMode];
     const due=document.getElementById('dueDate').value;
@@ -1481,7 +1562,8 @@
       'Print Locations:',
       locsStr, '',
       addons.length?`Add-ons: ${addons.join(', ')}`:'',
-      `Delivery: ${shipMode==='ship'?'Ship':'Pickup'}`, '',
+      `Delivery: ${shipMode==='blind'?'Blind Ship to Client':shipMode==='ship'?'Ship to Me':'Pickup'}`,
+      (shipMode==='ship'||shipMode==='blind')?`Ship to: ${document.getElementById('shipAddr').value.trim()}, ${document.getElementById('shipCity').value.trim()}, ${document.getElementById('shipState').value.trim()} ${document.getElementById('shipZip').value.trim()}`:'', '',
       `Estimated Total: ${tot} (${ppc}/pc)`, '',
       'Art upload: https://sendtodrive.com/p/ESJDtCVMSl7Dkm2X',
       notes?`\nNotes:\n${notes}`:'',
