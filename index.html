@@ -1490,16 +1490,19 @@
     const subject=`Quote — ${name} / ${co} — ${qty} pcs`;
 
     try {
+      const formData = new FormData();
+      formData.append('access_key', W3F_KEY);
+      formData.append('subject', subject);
+      formData.append('from_name', name + ' (' + co + ')');
+      formData.append('name', name);
+      formData.append('email', em);
+      formData.append('phone', ph);
+      formData.append('replyto', em);
+      formData.append('message', message);
+
       const res = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
-        headers: { 'Content-Type':'application/json' },
-        body: JSON.stringify({
-          access_key: W3F_KEY,
-          subject: subject,
-          from_name: name + ' (' + co + ')',
-          replyto: em,
-          message: message,
-        })
+        body: formData
       });
       const data = await res.json();
       if(data.success) {
