@@ -919,7 +919,8 @@
       </div>
     </div>
     <div class="modal-footer">
-      <button class="modal-send-btn" onclick="sendQuote()">Send Quote via Email →</button>
+      <button class="modal-send-btn" id="sendBtn" onclick="sendQuote()">Send Quote →</button>
+      <div id="sendStatus" style="text-align:center;font-size:12px;margin-top:8px;display:none;"></div>
     </div>
   </div>
 </div>
@@ -1416,7 +1417,9 @@
   function openQuoteModal() { document.getElementById('quoteModal').style.display='flex'; }
   function closeQuoteModal() { document.getElementById('quoteModal').style.display='none'; }
 
-  function sendQuote() {
+  const W3F_KEY = 'b77aeb3c-6f1d-4580-b9b3-7a6ef4ba08af';
+
+  async function sendQuote() {
     const ids=['qName','qCompany','qPhone','qEmail'];
     let ok=true;
     ids.forEach(id=>{ const el=document.getElementById(id);
@@ -1424,6 +1427,11 @@
       else el.classList.remove('invalid');
     });
     if(!ok) return;
+
+    const btn=document.getElementById('sendBtn');
+    const status=document.getElementById('sendStatus');
+    btn.disabled=true; btn.textContent='Sending…';
+    status.style.display='none';
 
     const name=document.getElementById('qName').value.trim();
     const co=document.getElementById('qCompany').value.trim();
@@ -1461,9 +1469,7 @@
     if(isOn('swLabel')) addons.push('DTF Inner Label');
     if(isOn('swHangtag')) addons.push('Hang Tags');
 
-    const body=[
-      'Hi David,', '',
-      "Here's my order:", '',
+    const message=[
       `Name: ${name}`,
       `Company: ${co}`,
       `Phone: ${ph}`,
@@ -1478,12 +1484,39 @@
       `Delivery: ${shipMode==='ship'?'Ship':'Pickup'}`, '',
       `Estimated Total: ${tot} (${ppc}/pc)`, '',
       'Art upload: https://sendtodrive.com/p/ESJDtCVMSl7Dkm2X',
-      notes?`\nNotes:\n${notes}`:'', '',
-      'Please confirm and let me know next steps.',
+      notes?`\nNotes:\n${notes}`:'',
     ].filter(l=>l!=='').join('\n');
 
-    const subj=`Quote — ${name} / ${co} — ${qty} pcs`;
-    window.location.href=`mailto:info@meshprintstudio.com?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
+    const subject=`Quote — ${name} / ${co} — ${qty} pcs`;
+
+    try {
+      const res = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify({
+          access_key: W3F_KEY,
+          subject: subject,
+          from_name: name + ' (' + co + ')',
+          replyto: em,
+          message: message,
+        })
+      });
+      const data = await res.json();
+      if(data.success) {
+        status.style.display='block';
+        status.style.color='var(--forest)';
+        status.innerHTML='✓ Quote sent! We\'ll be in touch shortly.';
+        btn.textContent='Sent ✓';
+        setTimeout(()=>{ closeQuoteModal(); btn.disabled=false; btn.textContent='Send Quote →'; status.style.display='none'; }, 3000);
+      } else {
+        throw new Error(data.message||'Send failed');
+      }
+    } catch(err) {
+      status.style.display='block';
+      status.style.color='var(--brick)';
+      status.innerHTML='Something went wrong — please try again or email us directly.';
+      btn.disabled=false; btn.textContent='Send Quote →';
+    }
   }
 
   // ── INIT ──────────────────────────────────────
