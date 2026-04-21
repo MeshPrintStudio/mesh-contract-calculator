@@ -1358,7 +1358,7 @@
         const qinp = document.createElement('input'); qinp.type = 'number'; qinp.className = 'g-qty';
         qinp.min = '0'; qinp.placeholder = '#';
         qinp.value = g.qty;
-        qinp.oninput = e => { garments[idx].qty = e.target.value; autoFillRemainder(idx); validateGarmentQtys(); calc(); };
+        qinp.oninput = e => { if(_autoFilledIdx===idx) _autoFilledIdx=-1; garments[idx].qty = e.target.value; autoFillRemainder(idx); validateGarmentQtys(); calc(); };
         row.appendChild(qinp);
       }
 
@@ -1366,7 +1366,7 @@
       if (garments.length > 1) {
         const rm = document.createElement('button'); rm.className = 'g-remove';
         rm.innerHTML = '&times;'; rm.title = 'Remove';
-        rm.onclick = () => { garments.splice(idx, 1); renderGarments(); detectGarmentFlags(); validateGarmentQtys(); calc(); };
+        rm.onclick = () => { garments.splice(idx, 1); _autoFilledIdx=-1; renderGarments(); detectGarmentFlags(); validateGarmentQtys(); calc(); };
         row.appendChild(rm);
       }
 
@@ -1374,28 +1374,30 @@
     });
   }
 
+  let _autoFilledIdx = -1; // tracks which garment row was auto-filled
+
   function autoFillRemainder(changedIdx) {
     if (garments.length < 2) return;
     const totalQty = parseInt(document.getElementById('qty').value) || 0;
     if (!totalQty) return;
-    // Find garments with empty or zero qty, excluding the one just edited
-    const empties = [];
+    // Find garments with empty or auto-filled qty, excluding the one just edited
+    const candidates = [];
     let filledSum = 0;
     garments.forEach((g, i) => {
       const v = parseInt(g.qty) || 0;
       if (i === changedIdx) { filledSum += v; return; }
-      if (!v) empties.push(i);
+      if (!v || i === _autoFilledIdx) candidates.push(i);
       else filledSum += v;
     });
-    // Only auto-fill if exactly one row is empty
-    if (empties.length !== 1) return;
+    // Only auto-fill if exactly one row is a candidate
+    if (candidates.length !== 1) { _autoFilledIdx = -1; return; }
     const remainder = totalQty - filledSum;
-    if (remainder <= 0) return;
-    const idx = empties[0];
+    if (remainder <= 0) { _autoFilledIdx = -1; return; }
+    const idx = candidates[0];
     garments[idx].qty = String(remainder);
+    _autoFilledIdx = idx;
     // Update the DOM input
-    const inputs = document.querySelectorAll('.g-qty');
-    // Inputs map 1:1 to garments (all shown when length>1)
+    const inputs = document.querySelectorAll('#garmentRows .g-qty');
     if (inputs[idx]) inputs[idx].value = remainder;
   }
 
@@ -1423,7 +1425,9 @@
 
   function addGarment() {
     garments.push({ type:'tee', color:'unknown', desc:'', qty:'' });
+    _autoFilledIdx = -1;
     renderGarments();
+    autoFillRemainder(-1);
     validateGarmentQtys();
   }
 
