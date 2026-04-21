@@ -903,7 +903,7 @@
       <div class="card-title"><span class="step-num">1</span> How many pieces?</div>
       <div class="qty-row">
         <button class="qty-btn" onclick="adjQty(-12)">−</button>
-        <input class="qty-input" type="number" id="qty" value="100" min="1" max="5000" oninput="syncSlider();validateGarmentQtys();calc()">
+        <input class="qty-input" type="number" id="qty" value="100" min="1" max="5000" oninput="syncSlider();autoFillRemainder(-1);validateGarmentQtys();calc()">
         <button class="qty-btn" onclick="adjQty(12)">+</button>
       </div>
       <input type="range" class="qty-range" id="qtyRange" min="0" max="1000" value="320" oninput="sliderToQty()">
@@ -1299,6 +1299,7 @@
   function sliderToQty() {
     const s=parseInt(document.getElementById('qtyRange').value);
     document.getElementById('qty').value=sliderToQtyVal(s);
+    autoFillRemainder(-1);
     validateGarmentQtys();
     calc();
   }
@@ -1309,6 +1310,8 @@
     const el=document.getElementById('qty');
     el.value=Math.max(1,Math.min(5000,(parseInt(el.value)||1)+d));
     syncSlider();
+    autoFillRemainder(-1);
+    validateGarmentQtys();
     calc();
   }
 
@@ -1355,7 +1358,7 @@
         const qinp = document.createElement('input'); qinp.type = 'number'; qinp.className = 'g-qty';
         qinp.min = '0'; qinp.placeholder = '#';
         qinp.value = g.qty;
-        qinp.oninput = e => { garments[idx].qty = e.target.value; validateGarmentQtys(); calc(); };
+        qinp.oninput = e => { garments[idx].qty = e.target.value; autoFillRemainder(idx); validateGarmentQtys(); calc(); };
         row.appendChild(qinp);
       }
 
@@ -1369,6 +1372,31 @@
 
       container.appendChild(row);
     });
+  }
+
+  function autoFillRemainder(changedIdx) {
+    if (garments.length < 2) return;
+    const totalQty = parseInt(document.getElementById('qty').value) || 0;
+    if (!totalQty) return;
+    // Find garments with empty or zero qty, excluding the one just edited
+    const empties = [];
+    let filledSum = 0;
+    garments.forEach((g, i) => {
+      const v = parseInt(g.qty) || 0;
+      if (i === changedIdx) { filledSum += v; return; }
+      if (!v) empties.push(i);
+      else filledSum += v;
+    });
+    // Only auto-fill if exactly one row is empty
+    if (empties.length !== 1) return;
+    const remainder = totalQty - filledSum;
+    if (remainder <= 0) return;
+    const idx = empties[0];
+    garments[idx].qty = String(remainder);
+    // Update the DOM input
+    const inputs = document.querySelectorAll('.g-qty');
+    // Inputs map 1:1 to garments (all shown when length>1)
+    if (inputs[idx]) inputs[idx].value = remainder;
   }
 
   function validateGarmentQtys() {
