@@ -865,7 +865,7 @@
   </svg>
   <div class="header-right">
     <div class="header-title">Contract Client Pricing</div>
-    <div class="version-badge">v2.2</div>
+    <div class="version-badge">v2.3</div>
   </div>
 </header>
 
@@ -1040,11 +1040,21 @@
           </div>
         </div>
         <div id="shipAddress" style="display:none; margin-top:8px;">
+          <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px;font-weight:600;">Ship to</div>
           <input type="text" class="g-desc" id="shipAddr" placeholder="Street address" style="width:100%;margin-bottom:6px;">
           <div style="display:flex;gap:6px;">
             <input type="text" class="g-desc" id="shipCity" placeholder="City" style="flex:2;">
             <input type="text" class="g-desc" id="shipState" placeholder="State" style="width:60px;">
             <input type="text" class="g-desc" id="shipZip" placeholder="Zip" style="width:72px;">
+          </div>
+        </div>
+        <div id="blindReturn" style="display:none; margin-top:8px;">
+          <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px;font-weight:600;">Return address <span style="font-weight:400;text-transform:none;letter-spacing:0;">(your address — shown on the label)</span></div>
+          <input type="text" class="g-desc" id="returnAddr" placeholder="Street address" style="width:100%;margin-bottom:6px;">
+          <div style="display:flex;gap:6px;">
+            <input type="text" class="g-desc" id="returnCity" placeholder="City" style="flex:2;">
+            <input type="text" class="g-desc" id="returnState" placeholder="State" style="width:60px;">
+            <input type="text" class="g-desc" id="returnZip" placeholder="Zip" style="width:72px;">
           </div>
         </div>
       </div>
@@ -1055,7 +1065,7 @@
       <div class="card-title"><span class="step-num">6</span> Additional Details</div>
       <textarea class="notes-area" id="clientNotes" placeholder="Anything else we should know?"></textarea>
       <div class="extras-upload-row">
-        <a class="loc-upload" href="https://www.dropbox.com/request/ev8foaksztrcjapsnppt" target="_blank" rel="noopener noreferrer">
+        <a class="loc-upload" href="#" onclick="event.preventDefault();window.open('https://www.dropbox.com/request/ev8foaksztrcjapsnppt','meshUpload','width=700,height=600,left='+((screen.width-700)/2)+',top='+((screen.height-600)/2));">
           Upload Reference Files →
         </a>
         <span class="loc-upload-sub">Proofs, production sheets, mockups — anything that helps us produce your order accurately</span>
@@ -1677,11 +1687,11 @@
       // Upload link per location
       const upWrap=document.createElement('div'); upWrap.style.marginTop='8px';
       const upLink=document.createElement('a'); upLink.className='loc-upload';
-      upLink.href='https://www.dropbox.com/request/ev8foaksztrcjapsnppt'; upLink.target='_blank'; upLink.rel='noopener noreferrer';
+      upLink.href='#'; upLink.onclick=function(e){ e.preventDefault(); window.open('https://www.dropbox.com/request/ev8foaksztrcjapsnppt','meshUpload','width=700,height=600,left='+((screen.width-700)/2)+',top='+((screen.height-600)/2)); };
       upLink.textContent='Upload Art \u2014 label files to match print location';
       upWrap.appendChild(upLink);
       const upSub=document.createElement('div'); upSub.style.cssText='font-size:9px;color:var(--text-muted);margin-top:4px;';
-      upSub.textContent='Opens secure 3rd-party link to our private server.';
+      upSub.textContent='Opens secure Dropbox upload — no sign-in required.';
       upWrap.appendChild(upSub);
       body.appendChild(upWrap);
 
@@ -1770,6 +1780,7 @@
     document.getElementById('dShip').classList.toggle('active',mode==='ship');
     document.getElementById('dBlind').classList.toggle('active',mode==='blind');
     document.getElementById('shipAddress').style.display=(mode==='ship'||mode==='blind')?'block':'none';
+    document.getElementById('blindReturn').style.display=(mode==='blind')?'block':'none';
     calc();
   }
 
@@ -1779,7 +1790,7 @@
     fleece: { title:'🧶 Fleece & Special Handling', body:'Fleece, heavyweight knits, and tech fabrics require <strong>slower press speeds</strong> and extra care so ink bonds properly without scorching or distorting the material. We prioritize <strong>print quality over speed</strong> — the extra handling keeps your product looking sharp wash after wash.' },
     drop: { title:'📐 What is Drop?', body:'<strong>Drop</strong> is the distance from the <strong>collar seam</strong> down to the <strong>top edge of the graphic</strong>. It controls how high or low your print sits on the garment.<br><br>Our standard drop is <strong>2.75″–3″</strong> from the collar. Leave blank if you don\'t have a preference and we\'ll use standard placement.' },
     shipto: { title:'📦 Ship to Me', body:'Estimated at <strong>~$30/box</strong>. Final shipping cost will be adjusted at the end of your order if you aren\'t supplying your own shipping labels.' },
-    blind: { title:'📦 Blind Ship', body:'We ship directly to <strong>your client</strong> with <strong>no trace of our address</strong> on the box — it looks like it came from you. Final shipping cost will be adjusted at the end of your order if you aren\'t providing your own label.' },
+    blind: { title:'📦 Blind Ship', body:'We ship directly to <strong>your client</strong> with <strong>no trace of our address</strong> on the box — it looks like it came from you. You\'ll provide a <strong>return address</strong> (your business address) so the label shows your info, not ours. Final shipping cost will be adjusted at the end of your order if you aren\'t providing your own label.' },
     printmax: { title:'📏 Max Print Size', body:'Our maximum printable area depends on the location:<br><br><strong>Standard platen</strong> (front, back, chest, etc.):<br>Up to <strong>15″ wide × 17″ tall</strong><br><br><strong>Sleeve:</strong><br>Up to <strong>4.5″ wide × 17″ tall</strong><br><br>Values entered above the max will be automatically capped.' },
     pantone: { title:'🎨 Pantone Matching', body:'For colors that need to be exact, enter the <strong>PMS Coated</strong> number (e.g. <strong>485 C</strong>, <strong>123 C</strong>).<br><br>We use PMS <strong>Coated</strong> values to calibrate our ink mixing system. Uncoated or TCX references may not translate accurately.<br><br>Only fill in the colors that require a match — leave the rest blank. For example, a 4-color design might only need 2 matched while the other 2 are standard black and white.<br><br>Pantone matching is <strong>$15 per unique color</strong> — the same PMS used across multiple locations is only charged once.' },
     pantonefee: { title:'🎨 Pantone Matching Fee', body:'Charged at <strong>$15 per unique PMS color</strong> across your entire order. If the same Pantone number appears in multiple print locations, it\'s only counted once.<br><br>This covers custom ink mixing and color verification to match your specified PMS Coated values.' },
@@ -2018,7 +2029,8 @@
       locsStr, '',
       addons.length?`Add-ons: ${addons.join(', ')}`:'',
       `Delivery: ${shipMode==='blind'?'Blind Ship to Client':shipMode==='ship'?'Ship to Me':'Pickup'}`,
-      (shipMode==='ship'||shipMode==='blind')?`Ship to: ${document.getElementById('shipAddr').value.trim()}, ${document.getElementById('shipCity').value.trim()}, ${document.getElementById('shipState').value.trim()} ${document.getElementById('shipZip').value.trim()}`:'', '',
+      (shipMode==='ship'||shipMode==='blind')?`Ship to: ${document.getElementById('shipAddr').value.trim()}, ${document.getElementById('shipCity').value.trim()}, ${document.getElementById('shipState').value.trim()} ${document.getElementById('shipZip').value.trim()}`:'',
+      shipMode==='blind'?`Return address (on label): ${document.getElementById('returnAddr').value.trim()}, ${document.getElementById('returnCity').value.trim()}, ${document.getElementById('returnState').value.trim()} ${document.getElementById('returnZip').value.trim()}`:'', '',
       `Estimated Total: ${tot} (${ppc}/pc)`, '',
       'Art upload: https://www.dropbox.com/request/ev8foaksztrcjapsnppt',
       notes?`\nNotes:\n${notes}`:'',
