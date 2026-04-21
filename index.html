@@ -343,6 +343,10 @@
     }
 
     /* ── PANTONE MATCH ── */
+    .reprint-row {
+      display: flex; align-items: center; gap: 6px;
+      margin: 8px 0 4px 0;
+    }
     .pms-toggle-row {
       display: flex; align-items: center; gap: 8px;
       margin-top: 8px; padding: 6px 0;
@@ -913,7 +917,7 @@
 
     <!-- 2. WHAT ARE WE PRINTING ON? -->
     <div class="card">
-      <div class="card-title"><span class="step-num">2</span> What are we printing on?</div>
+      <div class="card-title"><span class="step-num">2</span> What blanks?</div>
       <div class="garment-rows" id="garmentRows"></div>
       <button class="add-garment-btn" onclick="addGarment()">+ Add Another Garment</button>
       <div class="qty-warning" id="qtyWarning"></div>
@@ -927,7 +931,7 @@
 
     <!-- 3. PRINT LOCATIONS -->
     <div class="card">
-      <div class="card-title"><span class="step-num">3</span> Where does the print go?</div>
+      <div class="card-title"><span class="step-num">3</span> Where and what are we printing?</div>
       <div class="loc-blocks" id="locBlocks"></div>
       <button class="add-loc-btn" id="addLocBtn" onclick="addLoc()">+ Add Another Location</button>
     </div>
@@ -1051,7 +1055,7 @@
       <div class="card-title"><span class="step-num">6</span> Additional Details</div>
       <textarea class="notes-area" id="clientNotes" placeholder="Anything else we should know?"></textarea>
       <div class="extras-upload-row">
-        <a class="loc-upload" href="https://sendtodrive.com/p/ESJDtCVMSl7Dkm2X" target="_blank" rel="noopener noreferrer">
+        <a class="loc-upload" href="https://www.dropbox.com/request/ev8foaksztrcjapsnppt" target="_blank" rel="noopener noreferrer">
           Upload Reference Files →
         </a>
         <span class="loc-upload-sub">Proofs, production sheets, mockups — anything that helps us produce your order accurately</span>
@@ -1258,7 +1262,7 @@
   // ── STATE ─────────────────────────────────────
   let garments = [{ type:'tee', color:'unknown', desc:'', qty:'' }];
   let locId = 1;
-  let locs = [{ id:1, preset:'front', custom:'', colors:2, printW:'', printH:'', lockH:false, drop:'', pmsOn:false, pmsColors:[] }];
+  let locs = [{ id:1, preset:'front', custom:'', colors:2, printW:'', printH:'', lockH:false, drop:'', pmsOn:false, pmsColors:[], reprint:false, reprintPO:'' }];
   let rushMode = 'standard';
   let shipMode = 'pickup';
   let fleeceAutoOn = false;
@@ -1518,6 +1522,27 @@
         body.appendChild(oi);
       }
 
+      // New Design / Reprint toggle
+      const rpRow=document.createElement('div'); rpRow.className='reprint-row';
+      const rpNew=document.createElement('button'); rpNew.type='button';
+      rpNew.className='pms-mode-btn'+(!loc.reprint?' pms-active':'');
+      rpNew.textContent='New Design';
+      rpNew.onclick=function(){ loc.reprint=false; loc.reprintPO=''; renderLocs(); };
+      rpRow.appendChild(rpNew);
+      const rpRe=document.createElement('button'); rpRe.type='button';
+      rpRe.className='pms-mode-btn'+(loc.reprint?' std-active':'');
+      rpRe.textContent='Reprint';
+      rpRe.onclick=function(){ loc.reprint=true; renderLocs(); };
+      rpRow.appendChild(rpRe);
+      if(loc.reprint){
+        const poInp=document.createElement('input'); poInp.type='text'; poInp.className='pms-input';
+        poInp.placeholder='Previous PO #'; poInp.value=loc.reprintPO;
+        poInp.style.marginLeft='8px'; poInp.style.flex='1';
+        poInp.oninput=function(e){ loc.reprintPO=e.target.value.trim(); };
+        rpRow.appendChild(poInp);
+      }
+      body.appendChild(rpRow);
+
       // Colors
       const cl=document.createElement('div'); cl.className='colors-label'; cl.textContent='Ink Colors';
       body.appendChild(cl);
@@ -1652,7 +1677,7 @@
       // Upload link per location
       const upWrap=document.createElement('div'); upWrap.style.marginTop='8px';
       const upLink=document.createElement('a'); upLink.className='loc-upload';
-      upLink.href='https://sendtodrive.com/p/ESJDtCVMSl7Dkm2X'; upLink.target='_blank'; upLink.rel='noopener noreferrer';
+      upLink.href='https://www.dropbox.com/request/ev8foaksztrcjapsnppt'; upLink.target='_blank'; upLink.rel='noopener noreferrer';
       upLink.textContent='Upload Art \u2014 label files to match print location';
       upWrap.appendChild(upLink);
       const upSub=document.createElement('div'); upSub.style.cssText='font-size:9px;color:var(--text-muted);margin-top:4px;';
@@ -1670,7 +1695,7 @@
 
   function addLoc() {
     if(locs.length>=4) return;
-    locs.push({ id:++locId, preset:'front', custom:'', colors:1, printW:'', printH:'', lockH:false, drop:'', pmsOn:false, pmsColors:[] });
+    locs.push({ id:++locId, preset:'front', custom:'', colors:1, printW:'', printH:'', lockH:false, drop:'', pmsOn:false, pmsColors:[], reprint:false, reprintPO:'' });
     renderLocs(); calc();
   }
 
@@ -1774,6 +1799,7 @@
   function hideTip(key) { if(activeTips[key]){ activeTips[key].remove(); delete activeTips[key]; } }
 
   // ── CORE CALCULATION ──────────────────────────
+  let _lastTierLabel='';
   function calc() {
     const qty=parseInt(document.getElementById('qty').value)||1;
     document.getElementById('qtyDisplay').textContent=qty.toLocaleString();
@@ -1781,7 +1807,8 @@
     const tier=getTier(qty);
     document.getElementById('tierLabel').textContent=tier.label;
 
-    renderLocs();
+    // Only re-render locations when the pricing tier changes (avoids killing input focus)
+    if(tier.label!==_lastTierLabel){ _lastTierLabel=tier.label; renderLocs(); }
 
     let basePrint=0, platenLocs=0;
     locs.forEach(loc=>{
@@ -1962,7 +1989,8 @@
         }).join(', ');
         pmsStr=`\n    Colors: ${pmsEntries}`;
       }
-      return `  Loc ${i+1}: ${nm} — ${l.colors} color${l.colors>1?'s':''}${sz}${dr}${pmsStr}`;
+      const rpStr=l.reprint?`\n    REPRINT${l.reprintPO?' — PO: '+l.reprintPO:''}`:'';
+      return `  Loc ${i+1}: ${nm} — ${l.colors} color${l.colors>1?'s':''}${sz}${dr}${pmsStr}${rpStr}`;
     }).join('\n');
 
     const addons=[];
@@ -1992,7 +2020,7 @@
       `Delivery: ${shipMode==='blind'?'Blind Ship to Client':shipMode==='ship'?'Ship to Me':'Pickup'}`,
       (shipMode==='ship'||shipMode==='blind')?`Ship to: ${document.getElementById('shipAddr').value.trim()}, ${document.getElementById('shipCity').value.trim()}, ${document.getElementById('shipState').value.trim()} ${document.getElementById('shipZip').value.trim()}`:'', '',
       `Estimated Total: ${tot} (${ppc}/pc)`, '',
-      'Art upload: https://sendtodrive.com/p/ESJDtCVMSl7Dkm2X',
+      'Art upload: https://www.dropbox.com/request/ev8foaksztrcjapsnppt',
       notes?`\nNotes:\n${notes}`:'',
     ].filter(l=>l!=='').join('\n');
 
