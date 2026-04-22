@@ -33,6 +33,7 @@
       background: var(--forest);
       color: var(--text);
       min-height: 100vh;
+      padding-bottom: 64px;
     }
 
     /* ── HEADER ── */
@@ -626,14 +627,12 @@
       background: var(--forest-dark); border-top: 2px solid var(--brick);
       padding: 10px 24px; display: flex; align-items: center; justify-content: space-between;
       gap: 14px; z-index: 200;
-      transform: translateY(100%);
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       box-shadow: 0 -6px 28px rgba(0,0,0,0.5);
     }
-    .float-bar.visible { transform: translateY(0); }
     .float-left { display: flex; align-items: baseline; gap: 16px; }
     .float-grp { display: flex; flex-direction: column; gap: 1px; }
     .float-lbl { font-family: 'Barlow Condensed', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); }
+    .float-qty { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800; color: var(--cream); line-height: 1; }
     .float-ppc { font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 900; color: var(--tan); line-height: 1; }
     .float-total { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800; color: var(--cream); line-height: 1; }
     .float-div { width: 1px; height: 28px; background: var(--border-dark); flex-shrink: 0; }
@@ -843,7 +842,7 @@
 </div>
 
 <header>
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 309.468 79.2013" class="mesh-wordmark" aria-label="Mesh Print Studio">
+  <a href="https://www.meshprintstudio.com/" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 309.468 79.2013" class="mesh-wordmark" aria-label="Mesh Print Studio">
   <g>
   <path style="stroke:none;fill-rule:nonzero;fill:currentColor;" d="M 92.953125 66.152344 L 205.742188 66.152344 L 205.742188 64.734375 L 92.953125 64.734375 Z M 92.953125 66.152344"/>
   <path style="stroke:none;fill-rule:nonzero;fill:currentColor;" d="M 97.460938 12.257812 C 100.964844 12.257812 103.519531 14.8125 103.519531 18.316406 L 103.519531 51.929688 L 92.949219 51.929688 C 89.445312 51.988281 86.890625 49.375 86.890625 45.871094 L 86.890625 29.003906 L 85.703125 29.003906 C 84.992188 29.003906 84.574219 29.777344 84.574219 30.847656 L 84.515625 51.929688 L 74.121094 51.929688 C 70.617188 51.988281 68.0625 49.375 68.0625 45.871094 L 68.0625 29.003906 L 66.875 29.003906 C 66.101562 29.300781 65.746094 29.777344 65.746094 30.847656 L 65.746094 51.929688 L 50.660156 51.929688 C 49.828125 51.988281 49.175781 51.277344 49.175781 50.445312 L 49.175781 18.316406 C 49.175781 14.8125 51.730469 12.257812 55.234375 12.257812 L 77.328125 12.257812 L 76.4375 18.433594 C 76.320312 19.085938 76.675781 19.742188 77.328125 19.859375 C 77.921875 19.917969 78.457031 19.503906 78.574219 18.851562 L 79.527344 13.207031 C 79.644531 12.613281 80.121094 12.257812 80.652344 12.257812 Z M 97.460938 12.257812"/>
@@ -862,7 +861,7 @@
   <path style="stroke:none;fill-rule:nonzero;fill:currentColor;" d="M 245.160156 57.699219 L 250.464844 57.699219 L 250.464844 59.1875 L 248.5625 59.1875 L 248.5625 64.46875 L 250.464844 64.46875 L 250.464844 65.957031 L 245.160156 65.957031 L 245.160156 64.46875 L 247.066406 64.46875 L 247.066406 59.1875 L 245.160156 59.1875 Z M 245.160156 57.699219"/>
   <path style="stroke:none;fill-rule:nonzero;fill:currentColor;" d="M 256.84375 64.707031 C 257.113281 64.707031 257.339844 64.660156 257.523438 64.570312 C 257.703125 64.480469 257.851562 64.351562 257.964844 64.1875 C 258.078125 64.023438 258.15625 63.824219 258.203125 63.597656 C 258.25 63.371094 258.269531 63.117188 258.269531 62.84375 L 258.269531 60.8125 C 258.269531 60.554688 258.246094 60.3125 258.191406 60.082031 C 258.136719 59.855469 258.054688 59.65625 257.941406 59.496094 C 257.828125 59.328125 257.683594 59.195312 257.5 59.097656 C 257.320312 59 257.101562 58.949219 256.84375 58.949219 C 256.585938 58.949219 256.367188 59 256.1875 59.097656 C 256.003906 59.195312 255.859375 59.328125 255.746094 59.496094 C 255.628906 59.65625 255.546875 59.855469 255.496094 60.082031 C 255.441406 60.3125 255.414062 60.554688 255.414062 60.8125 L 255.414062 62.84375 C 255.414062 63.117188 255.4375 63.371094 255.484375 63.597656 C 255.527344 63.824219 255.609375 64.023438 255.722656 64.1875 C 255.835938 64.351562 255.980469 64.480469 256.164062 64.570312 C 256.34375 64.660156 256.570312 64.707031 256.84375 64.707031 M 253.921875 60.910156 C 253.921875 59.839844 254.179688 59.011719 254.695312 58.421875 C 255.214844 57.832031 255.929688 57.535156 256.84375 57.535156 C 257.757812 57.535156 258.472656 57.832031 258.988281 58.421875 C 259.507812 59.011719 259.765625 59.839844 259.765625 60.910156 L 259.765625 62.746094 C 259.765625 63.847656 259.507812 64.6875 258.988281 65.261719 C 258.472656 65.832031 257.757812 66.121094 256.84375 66.121094 C 255.929688 66.121094 255.214844 65.832031 254.695312 65.261719 C 254.179688 64.6875 253.921875 63.847656 253.921875 62.746094 Z M 253.921875 60.910156"/>
   </g>
-  </svg>
+  </svg></a>
   <div class="header-right">
     <div class="header-title">Contract Client Pricing</div>
     <div class="version-badge">v2.4</div>
@@ -1110,6 +1109,8 @@
 <!-- FLOATING BAR -->
 <div class="float-bar" id="floatBar">
   <div class="float-left">
+    <div class="float-grp"><div class="float-lbl">Qty</div><div class="float-qty" id="fQty">—</div></div>
+    <div class="float-div"></div>
     <div class="float-grp"><div class="float-lbl">Per Piece</div><div class="float-ppc" id="fPpc">—</div></div>
     <div class="float-div"></div>
     <div class="float-grp"><div class="float-lbl">Est. Total</div><div class="float-total" id="fTotal">—</div></div>
@@ -1905,6 +1906,7 @@
     // Display
     document.getElementById('perPiece').textContent=fmt(ppc);
     document.getElementById('brkTotal').textContent=fmtI(displayTotal);
+    document.getElementById('fQty').textContent=qty.toLocaleString();
     document.getElementById('fPpc').textContent=fmt(ppc);
     document.getElementById('fTotal').textContent=fmtI(displayTotal);
 
@@ -2235,12 +2237,7 @@
   renderLocs();
   calc();
 
-  // Float bar
-  const floatBar=document.getElementById('floatBar');
-  const resCard=document.querySelector('.result-card');
-  new IntersectionObserver(entries=>{
-    entries.forEach(e=>floatBar.classList.toggle('visible',!e.isIntersecting));
-  },{threshold:0.2}).observe(resCard);
+  // Float bar is always visible (no toggle needed)
 </script>
 </body>
 </html>
