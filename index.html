@@ -865,7 +865,7 @@
   </svg>
   <div class="header-right">
     <div class="header-title">Contract Client Pricing</div>
-    <div class="version-badge">v2.3</div>
+    <div class="version-badge">v2.4</div>
   </div>
 </header>
 
@@ -1256,15 +1256,19 @@
     { value:'maroon', label:'Maroon', dark:true },
     { value:'darkgreen', label:'Dark Green / Forest', dark:true },
     { value:'brown', label:'Brown', dark:true },
-    { value:'red', label:'Red', dark:false },
-    { value:'royal', label:'Royal Blue', dark:false },
+    { value:'red', label:'Red', dark:true },
+    { value:'royal', label:'Royal Blue', dark:true },
     { value:'white', label:'White', dark:false },
-    { value:'heathergrey', label:'Heather Grey', dark:false },
-    { value:'sand', label:'Sand / Tan', dark:false },
-    { value:'pink', label:'Pink', dark:false },
-    { value:'yellow', label:'Yellow', dark:false },
-    { value:'orange', label:'Orange', dark:false },
-    { value:'other', label:'Other', dark:false },
+    { value:'natural', label:'Natural', dark:false },
+    { value:'lightblue', label:'Light Blue', dark:false },
+    { value:'lightpink', label:'Light Pink', dark:false },
+    { value:'athleticheather', label:'Athletic Heather', dark:false },
+    { value:'heathergrey', label:'Heather Grey', dark:true },
+    { value:'sand', label:'Sand / Tan', dark:true },
+    { value:'pink', label:'Pink', dark:true },
+    { value:'yellow', label:'Yellow', dark:true },
+    { value:'orange', label:'Orange', dark:true },
+    { value:'other', label:'Other', dark:true },
   ];
   const FLEECE_TYPES = new Set(['hoodie','crewneck','sweatpants']);
   const FLEECE_KEYWORDS = ['hoodie','hoody','sweatshirt','crewneck','crew neck','fleece','pullover','zip-up','zip up','18500','18000','ss3000','p170','g185','g186'];
@@ -1895,13 +1899,14 @@
     const shipCost=(shipMode==='ship'||shipMode==='blind')?boxes*_A.shipBox:0;
 
     const total=rushedPrint+screenCost+platenCost+extras+shipCost;
-    const ppc=total/qty;
+    const ppc=Math.round((total/qty)*100)/100;        // round per-piece to nearest cent
+    const displayTotal=ppc*qty;                        // total from rounded ppc so numbers match
 
     // Display
     document.getElementById('perPiece').textContent=fmt(ppc);
-    document.getElementById('brkTotal').textContent=fmtI(total);
+    document.getElementById('brkTotal').textContent=fmtI(displayTotal);
     document.getElementById('fPpc').textContent=fmt(ppc);
-    document.getElementById('fTotal').textContent=fmtI(total);
+    document.getElementById('fTotal').textContent=fmtI(displayTotal);
 
     // Summary breakdown
     document.getElementById('sPrintLabel').textContent=
@@ -2070,6 +2075,159 @@
       btn.disabled=false; btn.textContent='Send Quote →';
     }
   }
+
+  // ── ABANDONED QUOTE TRACKING ──────────────────
+  const _AQ = {
+    pageLoad: Date.now(),
+    interacted: false,
+    quoteSubmitted: false,
+    modalOpened: false,
+    formStarted: false,
+    sent: false,
+    GSHEET_URL: 'https://script.google.com/macros/s/AKfycbyJspbgFjKpiBQTcKtRDF9fFwmmWUMgxRMjeadJkYytMTADj67hMHhiuAWjm_Q9hnIVGQ/exec'
+  };
+
+  // Track any interaction
+  document.querySelector('.calc-wrap').addEventListener('input', () => { _AQ.interacted = true; }, { once: true });
+  document.querySelector('.calc-wrap').addEventListener('change', () => { _AQ.interacted = true; }, { once: true });
+
+  // Track modal open (patch existing function)
+  const _origOpenModal = openQuoteModal;
+  openQuoteModal = function() { _AQ.modalOpened = true; _origOpenModal(); };
+
+  // Track form field entry inside modal
+  ['clientName','clientCompany','clientPhone','clientEmail'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => { _AQ.formStarted = true; }, { once: true });
+  });
+
+  // Mark quote as submitted (patch existing function)
+  const _origSendQuote = sendQuote;
+  sendQuote = async function() {
+    const result = await _origSendQuote();
+    setTimeout(() => {
+      if (document.getElementById('sendBtn').textContent.includes('Sent')) _AQ.quoteSubmitted = true;
+    }, 500);
+    return result;
+  };
+
+  function _aqFurthestStep() {
+    if (_AQ.formStarted) return 'Started filling form';
+    if (_AQ.modalOpened) return 'Opened quote modal';
+    const q = parseInt(document.getElementById('qty').value) || 0;
+    const hasColor = garments.some(g => g.color !== 'unknown');
+    if (q > 0 && hasColor) return 'Configured job';
+    return 'Changed fields only';
+  }
+
+  function _aqTimeOnPage() {
+    const secs = Math.round((Date.now() - _AQ.pageLoad) / 1000);
+    if (secs < 60) return secs + 's';
+    const m = Math.floor(secs / 60), s = secs % 60;
+    return m + 'm ' + s + 's';
+  }
+
+  function _aqSnapshot() {
+    const qty = document.getElementById('qty').value || '0';
+    const ppc = document.getElementById('perPiece').textContent;
+    const tot = document.getElementById('brkTotal').textContent;
+    const garmentStr = garments.map(g => {
+      const t = GARMENT_TYPES.find(x => x.key === g.type);
+      return t ? t.label : g.type;
+    }).join(', ');
+    const colorStr = garments.map(g => {
+      const c = GARMENT_COLORS.find(x => x.value === g.color);
+      return c && c.value !== 'unknown' ? c.label : '';
+    }).filter(Boolean).join(', ') || 'None selected';
+    const addons = [];
+    if (isOn('swFlash')) addons.push('Flash');
+    if (isOn('swFleece')) addons.push('Fleece');
+    if (isOn('swFold')) addons.push('Fold/Bag');
+    if (isOn('swLabel')) addons.push('Label');
+    if (isOn('swHangtag')) addons.push('Hangtag');
+    if (isOn('swPantone')) addons.push('Pantone');
+    return { qty, ppc, tot, garmentStr, colorStr, locCount: locs.length, addons: addons.join(', ') || 'None' };
+  }
+
+  function _aqSend() {
+    if (_AQ.sent || _AQ.quoteSubmitted || !_AQ.interacted) return;
+    _AQ.sent = true;
+
+    const snap = _aqSnapshot();
+    const step = _aqFurthestStep();
+    const timeStr = _aqTimeOnPage();
+    const sessionId = new Date().toISOString().slice(0,19).replace('T',' ');
+
+    // 1) Email via Web3Forms
+    const emailData = new FormData();
+    emailData.append('access_key', W3F_KEY);
+    emailData.append('subject', '🛒 Abandoned Quote — ' + snap.qty + ' pcs, ' + snap.tot);
+    emailData.append('from_name', 'Mesh Calculator (Abandoned)');
+    const cN = (document.getElementById('clientName') || {}).value || '';
+    const cCo = (document.getElementById('clientCompany') || {}).value || '';
+    const cPh = (document.getElementById('clientPhone') || {}).value || '';
+    const cEm = (document.getElementById('clientEmail') || {}).value || '';
+    const contactLines = (cN || cCo || cPh || cEm) ? [
+      '', 'Contact info entered:',
+      cN ? '  Name: ' + cN : '',
+      cCo ? '  Company: ' + cCo : '',
+      cPh ? '  Phone: ' + cPh : '',
+      cEm ? '  Email: ' + cEm : ''
+    ].filter(Boolean) : [];
+    emailData.append('message', [
+      'Someone started a quote but left without submitting.',
+      '',
+      'Furthest step: ' + step,
+      'Time on page: ' + timeStr,
+      ...contactLines,
+      '',
+      'Qty: ' + snap.qty,
+      'Garment(s): ' + snap.garmentStr,
+      'Color(s): ' + snap.colorStr,
+      'Locations: ' + snap.locCount,
+      'Add-ons: ' + snap.addons,
+      '',
+      'Per piece: ' + snap.ppc,
+      'Estimated total: ' + snap.tot
+    ].join('\n'));
+    navigator.sendBeacon('https://api.web3forms.com/submit', emailData);
+
+    // 2) Log to Google Sheets
+    if (_AQ.GSHEET_URL !== 'GOOGLE_APPS_SCRIPT_URL_HERE') {
+      const cName = (document.getElementById('clientName') || {}).value || '';
+      const cCompany = (document.getElementById('clientCompany') || {}).value || '';
+      const cPhone = (document.getElementById('clientPhone') || {}).value || '';
+      const cEmail = (document.getElementById('clientEmail') || {}).value || '';
+      const sheetData = JSON.stringify({
+        timestamp: sessionId,
+        name: cName,
+        company: cCompany,
+        phone: cPhone,
+        email: cEmail,
+        qty: snap.qty,
+        garments: snap.garmentStr,
+        colors: snap.colorStr,
+        perPiece: snap.ppc,
+        estTotal: snap.tot,
+        locations: snap.locCount,
+        addons: snap.addons,
+        furthestStep: step,
+        timeOnPage: timeStr
+      });
+      fetch(_AQ.GSHEET_URL, {
+        method: 'POST',
+        keepalive: true,
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: sheetData
+      }).catch(() => {});
+    }
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') _aqSend();
+  });
+  window.addEventListener('pagehide', _aqSend);
 
   // ── INIT ──────────────────────────────────────
   document.getElementById('dueDate').setAttribute('min', new Date().toISOString().split('T')[0]);
